@@ -147,7 +147,7 @@ func (s *Scanner) Scan() bool {
 			}
 			data = append(data, c)
 		}
-		s.taxon = &Taxon{Name: name, Type: s.kind, Chars: data}
+		s.taxon = &Taxon{Name: name, Block: s.block, Type: s.kind, Chars: data}
 		return true
 	}
 }
