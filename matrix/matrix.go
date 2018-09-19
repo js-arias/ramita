@@ -18,6 +18,7 @@ import (
 // A Taxon is a taxon name with phylogenetic (character) data.
 type Taxon struct {
 	Name  string
+	Block int // Current block
 	Type  DataType
 	Chars []uint8
 }
@@ -205,6 +206,14 @@ func readDataType(r *bufio.Reader) (DataType, error) {
 	return 0, errors.Errorf("unknown data type: %s", tp)
 }
 
+// Unknown returns the Unknown state for a datatype.
+func Unknown(kind DataType) uint8 {
+	if kind == DNA {
+		return 15
+	}
+	return 255
+}
+
 func readStates(r *bufio.Reader, kind DataType) (uint8, error) {
 	if kind == DNA {
 		r1, _, err := r.ReadRune()
@@ -241,7 +250,7 @@ func readStates(r *bufio.Reader, kind DataType) (uint8, error) {
 		case 'V', 'v':
 			return 1 | 2 | 4, nil // not T
 		case 'X', 'x', 'N', 'n', '?', '-', 'O', 'o':
-			return 15, nil
+			return Unknown(DNA), nil
 		}
 		return 0, errors.Errorf("unknown symbol %q", r1)
 	}
@@ -254,7 +263,7 @@ func readStates(r *bufio.Reader, kind DataType) (uint8, error) {
 			return 0, err
 		}
 		if r1 == '?' || r1 == '-' {
-			return 255, nil
+			return Unknown(Morphology), nil
 		}
 		if r1 == '[' || r1 == '(' {
 			var c uint8
