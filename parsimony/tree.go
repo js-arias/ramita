@@ -53,3 +53,30 @@ func (n *Node) write(w io.Writer, comma bool) {
 	n.Right.write(w, comma)
 	fmt.Fprintf(w, ")")
 }
+
+// Laderize moves smaller branches to be left descendants,
+// or to be right descendants if right is true.
+func (t *Tree) Laderize(right bool) {
+	t.Root.laderize(right)
+}
+
+// Laderize moves smaller branches to be left descendants,
+// or to be right descendants if right is true.
+// It returns the number of terminals in the branch.
+func (n *Node) laderize(right bool) int {
+	if n.Term != nil {
+		return 1
+	}
+	l := n.Left.laderize(right)
+	r := n.Right.laderize(right)
+	if right {
+		if r > l {
+			n.Left, n.Right = n.Right, n.Left
+		}
+		return l + r
+	}
+	if l > r {
+		n.Left, n.Right = n.Right, n.Left
+	}
+	return l + r
+}
