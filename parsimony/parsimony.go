@@ -232,7 +232,7 @@ func (tr *Tree) addTerm(tm *Terminal) {
 			a.Right = na
 		}
 
-		cost := increDown(na)
+		cost, stop := increBound(na, bestCost)
 		if cost < bestCost {
 			bestCost = cost
 			bestPos = d
@@ -251,6 +251,9 @@ func (tr *Tree) addTerm(tm *Terminal) {
 			copy(a.Chars, a.charsCopy)
 			a.Cost = a.costCopy
 			a = a.Anc
+			if a == stop {
+				break
+			}
 		}
 	}
 
@@ -289,6 +292,28 @@ func increDown(n *Node) int {
 		n = n.Anc
 	}
 	return cost
+}
+
+// IncreBound implements a simple incremental downpass,
+// and stopped the optimization
+// when the cost is greather than a given bound.
+// It returns the final cost,
+// and the stopping node.
+func increBound(n *Node, bound int) (int, *Node) {
+	cost := 0
+	for n != nil {
+		if n.Term != nil {
+			n = n.Anc
+			continue
+		}
+		optimize(n)
+		cost = n.Cost
+		if cost > bound {
+			return cost, n
+		}
+		n = n.Anc
+	}
+	return cost, nil
 }
 
 // Optimize makes an optimization,
