@@ -33,7 +33,6 @@ func (t *Tree) Cost() int {
 
 // Write writes a tree into a io.Writer.
 func (t *Tree) Write(w io.Writer, comma bool) {
-	fmt.Fprintf(w, "# Length: %d\n", t.Cost())
 	t.Root.write(w, comma)
 	fmt.Fprintf(w, ";")
 }
