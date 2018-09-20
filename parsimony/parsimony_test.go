@@ -98,3 +98,47 @@ func TestNewMatrix(t *testing.T) {
 		t.Errorf("parsimony: newmatrix: %d characters, want %d", len(term.Chars), 2922)
 	}
 }
+
+var matrix3 = `
+> morpho
+A 00001111
+B 00110011
+C 01010101
+`
+
+func TestWagner(t *testing.T) {
+	r := strings.NewReader(matrix3)
+	s := matrix.NewScanner(r)
+	m, err := NewMatrix(s)
+	if err != nil {
+		t.Errorf("parsinomy: wagner: unexpected error while reading matrix: %v", err)
+	}
+	tr := m.Wagner()
+	if tr.Cost() != 6 {
+		t.Errorf("parsinomy: wagner: wrong cost %d, want %d", tr.Cost(), 6)
+	}
+
+	r = strings.NewReader(dnaBlob)
+	s = matrix.NewScanner(r)
+	m, err = NewMatrix(s)
+	tr = m.Wagner()
+
+	added := make(map[string]bool)
+	nt := checkTerminals(t, tr.Root, added)
+	if nt != 21 {
+		t.Errorf("parsinomy: wagner: tree size %d terminals, want %d", nt, 21)
+	}
+	for nm := range m.Names {
+		if !added[nm] {
+			t.Errorf("parsinomy: wagner: taxon %s not added", nm)
+		}
+	}
+}
+
+func checkTerminals(t *testing.T, n *Node, added map[string]bool) int {
+	if n.Term != nil {
+		added[n.Term.Name] = true
+		return 1
+	}
+	return checkTerminals(t, n.Left, added) + checkTerminals(t, n.Right, added)
+}
