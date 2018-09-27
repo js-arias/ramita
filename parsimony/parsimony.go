@@ -332,3 +332,142 @@ func optimize(n *Node) {
 		n.Chars[i] = v
 	}
 }
+
+// Dayoff performs an SPR branch swapping
+// on a tree.
+func (tr *Tree) Dayoff() {
+	// randomize node order
+	nodes := make(map[int]*Node)
+	var ls []int
+	for _, n := range tr.Nodes {
+		copy(n.charsCopy, n.Chars)
+		n.costCopy = n.Cost
+		if n == tr.Root {
+			continue
+		}
+		v := rand.Int()
+		ls = append(ls, v)
+		nodes[v] = n
+	}
+	sort.Ints(ls)
+
+	for improve := true; improve; {
+		improve = tr.swap(nodes, ls)
+	}
+}
+
+// Swap test a node position among all
+// nodes in the indicated node set.
+// It returns true if a new position is found.
+func (tr *Tree) swap(nodes map[int]*Node, ls []int) bool {
+	bestCost := tr.Cost()
+	for _, i := range ls {
+		// removes the node
+		n := nodes[i]
+		if n.Anc == tr.Root {
+			continue
+		}
+
+		a := n.Anc
+		sis := a.Left
+		if sis == n {
+			sis = a.Right
+		}
+		a.Left = n
+		a.Right = nil
+
+		gf := a.Anc
+		unc := gf.Left
+		if unc == a {
+			unc = gf.Right
+		}
+		gf.Left = unc
+		gf.Right = sis
+		a.Anc = nil
+		sis.Anc = gf
+
+		increDown(gf)
+		for x := gf; x != nil; x = x.Anc {
+			copy(x.charsCopy, x.Chars)
+			x.costCopy = x.Cost
+		}
+
+		// test positions of the node
+		for _, j := range ls {
+			p := nodes[j]
+			if p.IsDesc(a) {
+				continue
+			}
+			if p == sis {
+				continue
+			}
+			if p.Anc == tr.Root {
+				continue
+			}
+
+			pa := p.Anc
+			psis := pa.Left
+			if psis == p {
+				psis = pa.Right
+			}
+			pa.Left = psis
+			pa.Right = a
+			p.Anc = a
+			a.Right = p
+			a.Anc = pa
+			
+			cost, stop := increBound(a, bestCost)
+			if cost < bestCost {
+				// The new position is the best
+				// so update backups and return
+				for x := a; x != nil; x = x.Anc {
+					copy(x.charsCopy, x.Chars)
+					x.costCopy = x.Cost
+				}
+				return true
+			}
+
+			// restore positions
+			p.Anc = pa
+			pa.Right = p
+			a.Anc = nil
+			a.Right = nil
+
+			// Restore assignations
+			for x := p; x != nil; x = x.Anc {
+				copy(x.Chars, x.charsCopy)
+				x.Cost = x.costCopy
+				if x == stop {
+					break
+				}
+			}
+		}
+		// restore the node
+		sis.Anc = a
+		a.Right = sis
+		a.Anc = gf
+		gf.Left = unc
+		gf.Right = a
+		copy(a.Chars, a.charsCopy)
+		a.Cost = a.costCopy
+		increDown(gf)
+		for x := gf; x != nil; x = x.Anc {
+			copy(x.charsCopy, x.Chars)
+			x.costCopy = x.Cost
+		}
+	}
+	return false
+}
+
+// IsDesc returns true,
+// if the node a,
+// is an ancestor of n.
+func (n *Node) IsDesc(a *Node) bool {
+	for n != nil {
+		if n == a {
+			return true
+		}
+		n = n.Anc
+	}
+	return false
+}

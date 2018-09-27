@@ -74,8 +74,10 @@ func run(c *cmdapp.Command, args []string) error {
 	}
 
 	tr := m.Wagner()
+	fmt.Printf("# Wagner Length: %d\n", tr.Cost())
+	tr.Dayoff()
 	tr.Laderize(false)
-	fmt.Printf("# Length: %d\n", tr.Cost())
+	fmt.Printf("# Final Length: %d\n", tr.Cost())
 	tr.Write(os.Stdout, comma)
 	fmt.Printf("\n")
 	return nil
