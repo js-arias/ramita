@@ -337,8 +337,8 @@ func optimize(n *Node) {
 // on a tree.
 func (tr *Tree) Dayoff() {
 	// randomize node order
-	nodes := make(map[int]*Node)
-	var ls []int
+	nodes := make(map[int]*Node, len(tr.Nodes))
+	ls := make([]int, 0, len(tr.Nodes))
 	for _, n := range tr.Nodes {
 		copy(n.charsCopy, n.Chars)
 		n.costCopy = n.Cost
@@ -350,7 +350,6 @@ func (tr *Tree) Dayoff() {
 		nodes[v] = n
 	}
 	sort.Ints(ls)
-
 	for improve := true; improve; {
 		improve = tr.swap(nodes, ls)
 	}
@@ -360,8 +359,11 @@ func (tr *Tree) Dayoff() {
 // nodes in the indicated node set.
 // It returns true if a new position is found.
 func (tr *Tree) swap(nodes map[int]*Node, ls []int) bool {
+	improved := false
 	bestCost := tr.Cost()
 	for _, i := range ls {
+		imp := false
+
 		// removes the node
 		n := nodes[i]
 		if n.Anc == tr.Root {
@@ -415,16 +417,19 @@ func (tr *Tree) swap(nodes map[int]*Node, ls []int) bool {
 			p.Anc = a
 			a.Right = p
 			a.Anc = pa
-			
+
 			cost, stop := increBound(a, bestCost)
 			if cost < bestCost {
 				// The new position is the best
-				// so update backups and return
+				// so update backups and break
 				for x := a; x != nil; x = x.Anc {
 					copy(x.charsCopy, x.Chars)
 					x.costCopy = x.Cost
 				}
-				return true
+				bestCost = cost
+				improved = true
+				imp = true
+				break
 			}
 
 			// restore positions
@@ -442,6 +447,12 @@ func (tr *Tree) swap(nodes map[int]*Node, ls []int) bool {
 				}
 			}
 		}
+
+		if imp {
+			// improvement in this node
+			continue
+		}
+
 		// restore the node
 		sis.Anc = a
 		a.Right = sis
@@ -456,7 +467,7 @@ func (tr *Tree) swap(nodes map[int]*Node, ls []int) bool {
 			x.costCopy = x.Cost
 		}
 	}
-	return false
+	return improved
 }
 
 // IsDesc returns true,
