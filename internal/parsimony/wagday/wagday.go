@@ -68,12 +68,12 @@ func run(c *cmdapp.Command, args []string) error {
 		defer f.Close()
 	}
 
-	m, err := parsimony.NewMatrix(matrix.NewScanner(f))
+	m, err := matrix.NewMatrix(f)
 	if err != nil {
 		return errors.Wrapf(err, "%s: when parsing matrix", c.Name())
 	}
 
-	tr := m.Wagner()
+	tr := parsimony.Wagner(m)
 	fmt.Printf("# Wagner Length: %d\n", tr.Cost())
 	tr.Dayoff()
 	tr.Laderize(false)

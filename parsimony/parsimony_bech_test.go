@@ -16,11 +16,10 @@ import (
 // Benchmark for a Wagner tree
 func BenchmarkWagner(b *testing.B) {
 	r := strings.NewReader(largeBlob)
-	s := matrix.NewScanner(r)
-	m, _ := NewMatrix(s)
+	m, _ := matrix.NewMatrix(r)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.Wagner()
+		Wagner(m)
 	}
 }
 
@@ -28,11 +27,10 @@ func BenchmarkWagner(b *testing.B) {
 // previous state copies.
 func BenchmarkWagnerNoCopy(b *testing.B) {
 	r := strings.NewReader(largeBlob)
-	s := matrix.NewScanner(r)
-	m, _ := NewMatrix(s)
+	m, _ := matrix.NewMatrix(r)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.noCopyWagner()
+		noCopyWagner(m)
 	}
 }
 
@@ -40,11 +38,10 @@ func BenchmarkWagnerNoCopy(b *testing.B) {
 // the search (but with previous state copying)
 func BenchmarkWagnerUnbound(b *testing.B) {
 	r := strings.NewReader(largeBlob)
-	s := matrix.NewScanner(r)
-	m, _ := NewMatrix(s)
+	m, _ := matrix.NewMatrix(r)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		m.unboundWagner()
+		unboundWagner(m)
 	}
 }
 
@@ -52,11 +49,10 @@ func BenchmarkWagnerUnbound(b *testing.B) {
 // a new node order each time the swapping is made.
 func BenchmarkDayoff(b *testing.B) {
 	r := strings.NewReader(largeBlob)
-	s := matrix.NewScanner(r)
-	m, _ := NewMatrix(s)
+	m, _ := matrix.NewMatrix(r)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tr := m.Wagner()
+		tr := Wagner(m)
 		tr.Dayoff()
 	}
 }
@@ -65,11 +61,10 @@ func BenchmarkDayoff(b *testing.B) {
 // node order.
 func BenchmarkDayoffJustOne(b *testing.B) {
 	r := strings.NewReader(largeBlob)
-	s := matrix.NewScanner(r)
-	m, _ := NewMatrix(s)
+	m, _ := matrix.NewMatrix(r)
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
-		tr := m.Wagner()
+		tr := Wagner(m)
 		tr.dayoffJustOne()
 	}
 }
@@ -77,9 +72,9 @@ func BenchmarkDayoffJustOne(b *testing.B) {
 // NoCopyWagner returns a new tree,
 // build with the Wagner algorithm and
 // a random addition sequence.
-func (m *Matrix) noCopyWagner() *Tree {
+func noCopyWagner(m *matrix.Matrix) *Tree {
 	// randomize terminal order
-	terms := make(map[int]*Terminal, len(m.Names)-1)
+	terms := make(map[int]*matrix.Terminal, len(m.Names)-1)
 	var ls []int
 	for _, t := range m.Names {
 		if t == m.Out {
@@ -139,7 +134,7 @@ func (m *Matrix) noCopyWagner() *Tree {
 }
 
 // NoCopyAddTerm adds a new terminal to the tree.
-func (tr *Tree) noCopyAddTerm(tm *Terminal) {
+func (tr *Tree) noCopyAddTerm(tm *matrix.Terminal) {
 	na := &Node{
 		Chars: make([]uint8, len(tm.Chars)),
 	}
@@ -197,9 +192,9 @@ func (tr *Tree) noCopyAddTerm(tm *Terminal) {
 // UnboundWagner returns a new tree,
 // build with the Wagner algorithm and
 // a random addition sequence.
-func (m *Matrix) unboundWagner() *Tree {
+func unboundWagner(m *matrix.Matrix) *Tree {
 	// randomize terminal order
-	terms := make(map[int]*Terminal, len(m.Names)-1)
+	terms := make(map[int]*matrix.Terminal, len(m.Names)-1)
 	var ls []int
 	for _, t := range m.Names {
 		if t == m.Out {
@@ -270,7 +265,7 @@ func (m *Matrix) unboundWagner() *Tree {
 }
 
 // UnboundAddTerm adds a new terminal to the tree.
-func (tr *Tree) unboundAddTerm(tm *Terminal) {
+func (tr *Tree) unboundAddTerm(tm *matrix.Terminal) {
 	na := &Node{
 		Chars:     make([]uint8, len(tm.Chars)),
 		charsCopy: make([]uint8, len(tm.Chars)),

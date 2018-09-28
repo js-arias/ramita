@@ -7,17 +7,19 @@ package parsimony
 import (
 	"fmt"
 	"io"
+
+	"github.com/js-arias/ramita/matrix"
 )
 
 // A Node is a node of a phylogenetic tree.
 type Node struct {
-	Anc         *Node     // Ancestor
-	Left, Right *Node     // Descendants of the node
-	Term        *Terminal // A Terminal (in case the node is a terminal)
-	Chars       []uint8   // Down-pass assignations
-	Cost        int       // Cost at this node
-	charsCopy   []uint8   // A copy of the down-pass assignation
-	costCopy    int       // A copy if the cost
+	Anc         *Node            // Ancestor
+	Left, Right *Node            // Descendants of the node
+	Term        *matrix.Terminal // A Terminal (in case the node is a terminal)
+	Chars       []uint8          // Down-pass assignations
+	Cost        int              // Cost at this node
+	charsCopy   []uint8          // A copy of the down-pass assignation
+	costCopy    int              // A copy if the cost
 }
 
 // A Tree is a phylogenetic tree.
