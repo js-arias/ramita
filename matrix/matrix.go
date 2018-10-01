@@ -49,7 +49,7 @@ type Terminal struct {
 }
 
 // NewMatrix returns a new matrix
-// from a matrix scanner.
+// from a reader.
 func NewMatrix(r io.Reader) (*Matrix, error) {
 	s := NewScanner(r)
 
