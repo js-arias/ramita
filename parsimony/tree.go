@@ -126,6 +126,10 @@ func (tr *Tree) readNode(r *bufio.Reader, anc *Node, m *matrix.Matrix, terms map
 		if r1 == ',' {
 			continue
 		}
+		if r1 == ':' {
+			skipBrLen(r)
+			continue
+		}
 		if r1 == ')' {
 			break
 		}
@@ -195,6 +199,10 @@ func readTerm(r *bufio.Reader) (string, error) {
 		if unicode.IsSpace(r1) {
 			break
 		}
+		if r1 == ':' {
+			skipBrLen(r)
+			break
+		}
 		if r1 == ',' || r1 == '(' || r1 == ')' {
 			r.UnreadRune()
 			break
@@ -202,4 +210,21 @@ func readTerm(r *bufio.Reader) (string, error) {
 		b.WriteRune(r1)
 	}
 	return b.String(), nil
+}
+
+// skipBrLen skips branch lengths.
+func skipBrLen(r *bufio.Reader) {
+	for {
+		r1, _, err := r.ReadRune()
+		if err != nil {
+			return
+		}
+		if unicode.IsSpace(r1) {
+			return
+		}
+		if r1 == ',' || r1 == '(' || r1 == ')' {
+			r.UnreadRune()
+			return
+		}
+	}
 }
