@@ -6,7 +6,6 @@ package likelihood
 
 import (
 	"bufio"
-	"fmt"
 	"io"
 	"math"
 	"strconv"
@@ -47,9 +46,6 @@ func (tr *Tree) Like() float64 {
 		for s, p := range c {
 			like += p * m.Freq(s)
 		}
-
-		fmt.Printf("%d: %.8f\n", i, like)
-
 		logLike += math.Log(like)
 	}
 	return logLike
