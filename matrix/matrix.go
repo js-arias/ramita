@@ -12,10 +12,11 @@ import (
 	"github.com/pkg/errors"
 )
 
-// A Matrix is a parsimony ready dataset.
+// A Matrix is a phylogenetic dataset.
 type Matrix struct {
 	Out   *Terminal
 	Names map[string]*Terminal
+	Kind  []DataType
 }
 
 // IsValid returns true,
@@ -84,6 +85,9 @@ func NewMatrix(r io.Reader) (*Matrix, error) {
 			empBlock = make([]uint8, len(tx.Chars))
 			for i := range empBlock {
 				empBlock[i] = Unknown(ct)
+			}
+			for _ = range tx.Chars {
+				m.Kind = append(m.Kind, ct)
 			}
 		}
 		if len(tx.Chars) != cblock {

@@ -6,5 +6,6 @@ package main
 
 import (
 	// initialize parsimony sub-commands
+	_ "github.com/js-arias/ramita/internal/parsimony/lencmd"
 	_ "github.com/js-arias/ramita/internal/parsimony/wagday"
 )
