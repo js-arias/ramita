@@ -175,6 +175,7 @@ func (tr *Tree) readNode(r *bufio.Reader, anc *Node, m *matrix.Matrix, terms map
 		} else {
 			return nil, errors.New("polytomic tree")
 		}
+		tr.Nodes = append(tr.Nodes, nt)
 	}
 
 	if n.Left == nil || n.Right == nil {
