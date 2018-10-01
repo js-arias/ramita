@@ -4,7 +4,7 @@
 
 // Package wagday implements the p.wagner command,
 // i.e. make a Wagner-Dayoff tree with parsimony.
-package parsimony
+package wagday
 
 import (
 	"fmt"
