@@ -87,10 +87,10 @@ func NewMatrix(r io.Reader) (*Matrix, error) {
 			}
 		}
 		if len(tx.Chars) != cblock {
-			return nil, errors.Errorf("parsimony: on block %d: taxon %s with wrong number of chars: %d, want %d", block, tx.Name, len(tx.Chars), cblock)
+			return nil, errors.Errorf("matrix: on block %d: taxon %s with wrong number of chars: %d, want %d", block, tx.Name, len(tx.Chars), cblock)
 		}
 		if bmap[tx.Name] {
-			return nil, errors.Errorf("parsimony: on block %d: taxon %s repeated", block, tx.Name)
+			return nil, errors.Errorf("matrix: on block %d: taxon %s repeated", block, tx.Name)
 		}
 		bmap[tx.Name] = true
 		t := m.Names[tx.Name]
@@ -107,7 +107,7 @@ func NewMatrix(r io.Reader) (*Matrix, error) {
 		t.Chars = append(t.Chars, tx.Chars...)
 	}
 	if err := s.Err(); err != nil {
-		return nil, errors.Wrap(err, "parsimony")
+		return nil, errors.Wrap(err, "matrix")
 	}
 
 	// check last block
@@ -119,7 +119,7 @@ func NewMatrix(r io.Reader) (*Matrix, error) {
 	}
 
 	if !m.IsValid() {
-		return nil, errors.New("parsimony: bad formatted matrix")
+		return nil, errors.New("matrix: bad formatted matrix")
 	}
 	return m, nil
 }
