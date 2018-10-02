@@ -8,14 +8,21 @@ import (
 	"bufio"
 	"io"
 	"math"
+	"math/rand"
+	"sort"
 	"strconv"
 	"strings"
+	"time"
 	"unicode"
 
 	"github.com/js-arias/ramita/matrix"
 
 	"github.com/pkg/errors"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 // A Conditional is the conditional likelihood
 // of a set of states.
@@ -74,6 +81,112 @@ func (n *Node) optimize(m *Matrix) {
 			n.Cond[i][s] = prob
 		}
 	}
+}
+
+// IncreDown implements a simple incremental downpass,
+// that optimize a node and its ancestors.
+func increDown(n *Node, m *Matrix) {
+	for n != nil {
+		if n.Term != nil {
+			n = n.Anc
+			continue
+		}
+		n.optimize(m)
+		n = n.Anc
+	}
+}
+
+// Refine permforms a simple
+// branch length refinement of the tree.
+func (tr *Tree) Refine() {
+	// randomize node order
+	nodes := make(map[int]*Node, len(tr.Nodes))
+	ls := make([]int, 0, len(tr.Nodes))
+	for _, n := range tr.Nodes {
+		if n == tr.Root {
+			continue
+		}
+		v := rand.Int()
+		ls = append(ls, v)
+		nodes[v] = n
+	}
+	sort.Ints(ls)
+	like := tr.Like()
+	for {
+		for _, i := range ls {
+			n := nodes[i]
+			if n == tr.Root {
+				continue
+			}
+			tr.refine(n, 0.1)
+		}
+		l := tr.Like()
+		if math.Abs(like-l) < 0.001 {
+			break
+		}
+		like = l
+	}
+}
+
+// Refine refines a branch length
+// in a recursive fashion.
+func (tr *Tree) refine(n *Node, step float64) {
+	if step < 0.001 {
+		return
+	}
+	like := tr.Like()
+	best := n.Len
+
+	// move branch length value up
+	ref := true
+	up := false
+	for ref {
+		ref = false
+		b := best + step
+		if b > 2 {
+			break
+		}
+		n.Len = b
+		increDown(n.Anc, tr.M)
+		l := tr.Like()
+		if l > like {
+			like = l
+			best = b
+			ref = true
+			up = true
+			continue
+		}
+	}
+
+	n.Len = best
+	increDown(n.Anc, tr.M)
+	if up {
+		tr.refine(n, step/10)
+		return
+	}
+
+	// move branch length value down
+	ref = true
+	for ref {
+		ref = false
+		b := best - step
+		if b < 0.001 {
+			break
+		}
+		n.Len = b
+		increDown(n.Anc, tr.M)
+		l := tr.Like()
+		if l > like {
+			like = l
+			best = b
+			ref = true
+			continue
+		}
+	}
+
+	n.Len = best
+	increDown(n.Anc, tr.M)
+	tr.refine(n, step/10)
 }
 
 // ReadTree reads a tree from a Reader.

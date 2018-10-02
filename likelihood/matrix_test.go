@@ -7,6 +7,8 @@ package likelihood
 import (
 	"strings"
 	"testing"
+
+	"math"
 )
 
 var dnaBlob = `
@@ -45,5 +47,18 @@ func TestReadMatrix(t *testing.T) {
 		if md.Freq(0) != float64(1)/4 {
 			t.Errorf("likelihood: readmatrix: character %d: frequency %.6f, want %.6f", i, md.Freq(0), float64(1)/4)
 		}
+		if m.states[i] != 4 {
+			t.Errorf("likelihood: readmatrix: character %d: number of states: %d, want %d", i, m.states[i], 4)
+		}
+	}
+}
+
+func TestModel(t *testing.T) {
+	m := NewJC()
+	if math.Abs(m.Prob(0, 0, 0.1)-0.929) > 0.01 {
+		t.Errorf("likelihood: model: probability: %.6f, want %.6f", m.Prob(0, 0, 0.1), 0.929)
+	}
+	if math.Abs(m.Prob(0, 1, 0.1)-0.0238) > 0.01 {
+		t.Errorf("likelihood: model: probability: %.6f, want %.6f", m.Prob(0, 1, 0.1), 0.0238)
 	}
 }
