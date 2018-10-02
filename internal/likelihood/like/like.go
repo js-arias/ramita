@@ -17,7 +17,7 @@ import (
 )
 
 var cmd = &cmdapp.Command{
-	UsageLine: "l.like [-t|--tree <treefile>] <dataset>",
+	UsageLine: "l.like [-o|--optimize] [-t|--tree <treefile>] <dataset>",
 	Short:     "print the likelihood of a tree",
 	Long: `
 Command l.like reads a tree in parenthetical format and prints its
@@ -25,10 +25,18 @@ negative log likelihood under a simple poisson model. If the tree
 does not have explicit branch lengths, a default branch length of
 0.01 will be used.
 
+If the option -o, or --optimize, is used, then it will try to
+improve branch lengths.
+
 The tree will be read from the standard input, unless the option
 -t or --tree is defined with a tree file.
 
 Options are:
+
+    -o
+    --optimize
+      Try to optimize the current branch lengths to increase the
+      likelihood.
 
     -t <treefile>
     --tree <treefile>
@@ -47,10 +55,13 @@ func init() {
 }
 
 var treefile string
+var optimize bool
 
 func register(c *cmdapp.Command) {
 	c.Flag.StringVar(&treefile, "tree", "", "")
 	c.Flag.StringVar(&treefile, "t", "", "")
+	c.Flag.BoolVar(&optimize, "optimize", false, "")
+	c.Flag.BoolVar(&optimize, "o", false, "")
 }
 
 func run(c *cmdapp.Command, args []string) error {
@@ -82,6 +93,11 @@ func run(c *cmdapp.Command, args []string) error {
 	if err != nil {
 		return errors.Wrapf(err, "%s: when parsing tree", c.Name())
 	}
+	if optimize {
+		fmt.Printf("# Origina tree -log Likelihood: %.6f\n", -tr.Like())
+		tr.Refine()
+	}
 	fmt.Printf("# Tree -log Likelihood:\n%.6f\n", -tr.Like())
+
 	return nil
 }
