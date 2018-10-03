@@ -5,6 +5,7 @@
 package likelihood
 
 import (
+	"fmt"
 	"io"
 
 	"github.com/js-arias/ramita/matrix"
@@ -46,11 +47,26 @@ func NewMatrix(r io.Reader) (*Matrix, error) {
 			m.states[i] = 4
 			continue
 		}
-		if _, ok := m.mds["mk8"]; !ok {
-			m.mds["mk8"] = NewPoisson(8)
+		var states uint8
+		for _, tx := range m.M.Names {
+			if tx.Chars[i] == 255 {
+				continue
+			}
+			states |= tx.Chars[i]
 		}
-		m.model[i] = "mk8"
-		m.states[i] = 8
+		max := 2
+		for b := uint8(7); b > 0; b-- {
+			if states&(1<<b) != 0 {
+				max = int(b) + 1
+				break
+			}
+		}
+		nm := fmt.Sprintf("mk%d", max)
+		if _, ok := m.mds[nm]; !ok {
+			m.mds[nm] = NewPoisson(max)
+		}
+		m.model[i] = nm
+		m.states[i] = max
 	}
 	return m, nil
 }
@@ -66,4 +82,9 @@ func (m *Matrix) Model(char int) Model {
 // in the datamatrix.
 func (m *Matrix) Chars() int {
 	return len(m.model)
+}
+
+// States returns the number of states of a character.
+func (m *Matrix) States(char int) int {
+	return m.states[char]
 }
