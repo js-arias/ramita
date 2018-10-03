@@ -43,7 +43,8 @@ func TestReadMatrix(t *testing.T) {
 	if err != nil {
 		t.Errorf("likelihood: readmatrix: unexpected error while reading matrix: %v", err)
 	}
-	for i, md := range m.Model {
+	for i := 0; i < m.Chars(); i++ {
+		md := m.Model(i)
 		if md.Freq(0) != float64(1)/4 {
 			t.Errorf("likelihood: readmatrix: character %d: frequency %.6f, want %.6f", i, md.Freq(0), float64(1)/4)
 		}

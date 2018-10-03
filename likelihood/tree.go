@@ -6,6 +6,7 @@ package likelihood
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"math"
 	"math/rand"
@@ -48,7 +49,7 @@ type Tree struct {
 func (tr *Tree) Like() float64 {
 	logLike := float64(0)
 	for i, c := range tr.Root.Cond {
-		m := tr.M.Model[i]
+		m := tr.M.Model(i)
 		like := float64(0)
 		for s, p := range c {
 			like += p * m.Freq(s)
@@ -56,6 +57,32 @@ func (tr *Tree) Like() float64 {
 		logLike += math.Log(like)
 	}
 	return logLike
+}
+
+// Write writes a tree into a io.Writer.
+func (t *Tree) Write(w io.Writer, comma bool) {
+	t.Root.write(w, comma)
+	fmt.Fprintf(w, ";")
+}
+
+// Write write a node into a io.Writer.
+func (n *Node) write(w io.Writer, comma bool) {
+	if n.Term != nil {
+		fmt.Fprintf(w, "%s:%.6f", n.Term.Name, n.Len)
+		return
+	}
+	fmt.Fprintf(w, "(")
+	n.Left.write(w, comma)
+	if comma {
+		fmt.Fprintf(w, ",")
+	} else {
+		fmt.Fprintf(w, " ")
+	}
+	n.Right.write(w, comma)
+	fmt.Fprintf(w, ")")
+	if n.Anc != nil {
+		fmt.Fprintf(w, ":%.6f", n.Len)
+	}
 }
 
 // CondState calculates the conditional
@@ -75,7 +102,7 @@ func (n *Node) optimize(m *Matrix) {
 		return
 	}
 	for i := range n.Cond {
-		mod := m.Model[i]
+		mod := m.Model(i)
 		for s := range n.Cond[i] {
 			prob := n.Left.condState(mod, i, s) * n.Right.condState(mod, i, s)
 			n.Cond[i][s] = prob
@@ -170,7 +197,7 @@ func (tr *Tree) refine(n *Node, step float64) {
 	for ref {
 		ref = false
 		b := best - step
-		if b < 0.001 {
+		if b < 0.0001 {
 			break
 		}
 		n.Len = b
@@ -231,7 +258,7 @@ func (n *Node) initializeConditionals(m *Matrix) {
 func (tr *Tree) readNode(r *bufio.Reader, anc *Node, terms map[string]bool) (*Node, error) {
 	n := &Node{
 		Anc:  anc,
-		Cond: make([]Conditional, len(tr.M.Model)),
+		Cond: make([]Conditional, tr.M.Chars()),
 		Len:  0.01,
 	}
 	n.initializeConditionals(tr.M)
@@ -285,7 +312,7 @@ func (tr *Tree) readNode(r *bufio.Reader, anc *Node, terms map[string]bool) (*No
 			Anc:  n,
 			Term: tm,
 			Len:  l,
-			Cond: make([]Conditional, len(tr.M.Model)),
+			Cond: make([]Conditional, tr.M.Chars()),
 		}
 		nt.initializeConditionals(tr.M)
 		if n.Left == nil {
