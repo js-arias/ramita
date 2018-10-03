@@ -78,6 +78,12 @@ func (m *Matrix) Model(char int) Model {
 	return m.mds[nm]
 }
 
+// Terms return the number of terminals
+// in the datamatrix.
+func (m *Matrix) Terms() int {
+	return len(m.M.Names)
+}
+
 // Chars returns the number of characters
 // in the datamatrix.
 func (m *Matrix) Chars() int {
@@ -87,4 +93,17 @@ func (m *Matrix) Chars() int {
 // States returns the number of states of a character.
 func (m *Matrix) States(char int) int {
 	return m.states[char]
+}
+
+// SetModel sets a model with a given ID
+// to a character.
+func (m *Matrix) SetModel(char int, id string, md Model) error {
+	if md.States() != m.states[char] {
+		return errors.Errorf("likelihood: matrix: model %s for %d states, char %d with %d states", id, md.States(), char, m.states[char])
+	}
+	if _, ok := m.mds[id]; !ok {
+		m.mds[id] = md
+	}
+	m.model[char] = id
+	return nil
 }

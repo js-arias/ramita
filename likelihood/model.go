@@ -15,6 +15,21 @@ type Model interface {
 
 	// Freq is the frequency of a given state.
 	Freq(s int) float64
+
+	// States is the number of states of a model.
+	States() int
+
+	// Changes is the number of free change types
+	// allowed by the model.
+	Changes() int
+
+	// ChangeRate returns the change rate
+	// of a given change type.
+	ChangeRate(tp int) float64
+
+	// SetChangeRate changes the change rate
+	// of a given change type.
+	SetChangeRate(tp int, r float64)
 }
 
 // Poisson is a generic poisson model.
@@ -43,6 +58,35 @@ func (p Poisson) Prob(from, to int, blen float64) float64 {
 func (p Poisson) Freq(s int) float64 {
 	return 1 / float64(p)
 }
+
+// States is the number of states of a model.
+func (p Poisson) States() int {
+	return int(p)
+}
+
+// Changes is the number of free change types
+// allowed by the model.
+// In the case of the Poisson model,
+// it is 0,
+// all changes are fixed.
+func (p Poisson) Changes() int {
+	return 1
+}
+
+// ChangeRate returns the change rate
+// of a given change type.
+// In the case of the Poisson model,
+// it is 1 / states.
+func (p Poisson) ChangeRate(tp int) float64 {
+	return 1 / float64(p)
+}
+
+// SetChangeRate changes the change rate
+// of a given change type.
+// As change rates in a poisson model
+// are fixed,
+// it is ignoder
+func (p Poisson) SetChangeRate(tp int, r float64) {}
 
 // NewJC returns a simple Poisson model
 // for DNA 4 states,

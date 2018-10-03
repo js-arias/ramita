@@ -36,6 +36,9 @@ type Node struct {
 	Term        *matrix.Terminal // A Terminal (in case the node is a terminal)
 	Cond        []Conditional    // Conditional likelihood of each character
 	Len         float64          // Length of the current branch
+
+	// backups
+	condCopy []Conditional
 }
 
 // A Tree is a phylogenetic tree.
@@ -110,6 +113,27 @@ func (n *Node) optimize(m *Matrix) {
 	}
 }
 
+// FullOpt optimize a node
+// and all of its descendants.
+func (n *Node) fullOpt(m *Matrix, id string) {
+	if n.Term != nil {
+		return
+	}
+	n.Left.fullOpt(m, id)
+	n.Right.fullOpt(m, id)
+
+	for i := range n.Cond {
+		if m.model[i] != id {
+			continue
+		}
+		md := m.Model(i)
+		for s := range n.Cond[i] {
+			prob := n.Left.condState(md, i, s) * n.Right.condState(md, i, s)
+			n.Cond[i][s] = prob
+		}
+	}
+}
+
 // IncreDown implements a simple incremental downpass,
 // that optimize a node and its ancestors.
 func increDown(n *Node, m *Matrix) {
@@ -120,6 +144,93 @@ func increDown(n *Node, m *Matrix) {
 		}
 		n.optimize(m)
 		n = n.Anc
+	}
+}
+
+// Estimate perfomrs a simple estimation
+// of the model parameters
+// under the current branch lengths.
+func (tr *Tree) Estimate() {
+	// get the model list
+	models := make(map[string]bool)
+	for _, id := range tr.M.model {
+		models[id] = true
+	}
+
+	like := tr.Like()
+	for {
+		for id := range models {
+			tr.estimate(id, 0.1)
+		}
+		l := tr.Like()
+		if math.Abs(like-l) < 0.001 {
+			break
+		}
+		like = l
+	}
+}
+
+// Estimate estimates change parameters
+// in a recursive fashion.
+func (tr *Tree) estimate(id string, step float64) {
+	if step < 0.001 {
+		return
+	}
+	like := tr.Like()
+	md := tr.M.mds[id]
+
+	for tp := 0; tp < md.Changes(); tp++ {
+		// move rate up
+		ref := true
+		up := false
+		best := md.ChangeRate(tp)
+		for ref {
+			ref = false
+			b := best + step
+			if b >= 1 {
+				break
+			}
+			md.SetChangeRate(tp, b)
+			tr.Root.fullOpt(tr.M, id)
+			l := tr.Like()
+			if l > like {
+				like = l
+				best = b
+				ref = true
+				up = true
+				continue
+			}
+		}
+
+		md.SetChangeRate(tp, best)
+		tr.Root.fullOpt(tr.M, id)
+		if up {
+			tr.estimate(id, step/10)
+			continue
+		}
+
+		// move rate down
+		ref = true
+		for ref {
+			ref = false
+			b := best - step
+			if b <= 0 {
+				break
+			}
+			md.SetChangeRate(tp, b)
+			tr.Root.fullOpt(tr.M, id)
+			l := tr.Like()
+			if l > like {
+				like = l
+				best = b
+				ref = true
+				continue
+			}
+		}
+
+		md.SetChangeRate(tp, best)
+		tr.Root.fullOpt(tr.M, id)
+		tr.estimate(id, step/10)
 	}
 }
 
@@ -243,6 +354,7 @@ func (n *Node) initializeConditionals(m *Matrix) {
 	for i := range n.Cond {
 		n.Cond[i] = make(Conditional, m.states[i])
 		if n.Term == nil {
+			n.condCopy[i] = make(Conditional, m.states[i])
 			continue
 		}
 		tm := n.Term
@@ -257,9 +369,10 @@ func (n *Node) initializeConditionals(m *Matrix) {
 // ReadNode reads a node from an reader.
 func (tr *Tree) readNode(r *bufio.Reader, anc *Node, terms map[string]bool) (*Node, error) {
 	n := &Node{
-		Anc:  anc,
-		Cond: make([]Conditional, tr.M.Chars()),
-		Len:  0.01,
+		Anc:      anc,
+		Cond:     make([]Conditional, tr.M.Chars()),
+		Len:      0.01,
+		condCopy: make([]Conditional, tr.M.Chars()),
 	}
 	n.initializeConditionals(tr.M)
 	tr.Nodes = append(tr.Nodes, n)
@@ -328,6 +441,7 @@ func (tr *Tree) readNode(r *bufio.Reader, anc *Node, terms map[string]bool) (*No
 		return nil, errors.New("node without two descendants")
 	}
 	n.optimize(tr.M)
+	copy(n.condCopy, n.Cond)
 
 	if anc != nil {
 		r1, _, err := r.ReadRune()
