@@ -54,7 +54,7 @@ func NewMatrix(r io.Reader) (*Matrix, error) {
 			}
 			states |= tx.Chars[i]
 		}
-		max := 2
+		max := 1
 		for b := uint8(7); b > 0; b-- {
 			if states&(1<<b) != 0 {
 				max = int(b) + 1
@@ -98,7 +98,7 @@ func (m *Matrix) States(char int) int {
 // SetModel sets a model with a given ID
 // to a character.
 func (m *Matrix) SetModel(char int, id string, md Model) error {
-	if md.States() != m.states[char] {
+	if md.States() < m.states[char] {
 		return errors.Errorf("likelihood: matrix: model %s for %d states, char %d with %d states", id, md.States(), char, m.states[char])
 	}
 	if _, ok := m.mds[id]; !ok {

@@ -281,7 +281,7 @@ func (tr *Tree) refine(n *Node, step float64) {
 	for ref {
 		ref = false
 		b := best + step
-		if b > 2 {
+		if b > 100 {
 			break
 		}
 		n.Len = b
