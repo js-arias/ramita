@@ -23,22 +23,17 @@ type Matrix struct {
 	states []int            // number of states per character
 }
 
-// NewMatrix returns a new matrix
-// from a reader.
-func NewMatrix(r io.Reader) (*Matrix, error) {
-	pm, err := matrix.NewMatrix(r)
-	if err != nil {
-		return nil, errors.Wrap(err, "likelihood")
-	}
-
+// NewFromMatrix returns a new matrix
+// from a matrix.Matrix.
+func NewFromMatrix(mt *matrix.Matrix) *Matrix {
 	m := &Matrix{
-		M:      pm,
-		model:  make([]string, len(pm.Kind)),
+		M:      mt,
+		model:  make([]string, len(mt.Kind)),
 		mds:    make(map[string]Model),
-		states: make([]int, len(pm.Kind)),
+		states: make([]int, len(mt.Kind)),
 	}
 
-	for i, k := range pm.Kind {
+	for i, k := range mt.Kind {
 		if k == matrix.DNA {
 			if _, ok := m.mds["jc"]; !ok {
 				m.mds["jc"] = NewJC()
@@ -68,7 +63,17 @@ func NewMatrix(r io.Reader) (*Matrix, error) {
 		m.model[i] = nm
 		m.states[i] = max
 	}
-	return m, nil
+	return m
+}
+
+// NewMatrix returns a new matrix
+// from a reader.
+func NewMatrix(r io.Reader) (*Matrix, error) {
+	pm, err := matrix.NewMatrix(r)
+	if err != nil {
+		return nil, errors.Wrap(err, "likelihood")
+	}
+	return NewFromMatrix(pm), nil
 }
 
 // Model returns the model used to estimate

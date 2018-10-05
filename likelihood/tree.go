@@ -258,6 +258,7 @@ func (tr *Tree) Refine() {
 			}
 			tr.refine(n, 0.1)
 		}
+		tr.Estimate()
 		l := tr.Like()
 		if math.Abs(like-l) < 0.001 {
 			break
@@ -352,9 +353,10 @@ func ReadTree(in io.Reader, m *Matrix) (*Tree, error) {
 
 func (n *Node) initializeConditionals(m *Matrix) {
 	for i := range n.Cond {
-		n.Cond[i] = make(Conditional, m.states[i])
+		md := m.Model(i)
+		n.Cond[i] = make(Conditional, md.States())
 		if n.Term == nil {
-			n.condCopy[i] = make(Conditional, m.states[i])
+			n.condCopy[i] = make(Conditional, md.States())
 			continue
 		}
 		tm := n.Term
